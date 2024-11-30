@@ -1,0 +1,48 @@
+20376;E:\MVSLibrary\Keylogger\x64\Debug\Keylogger.exe;2024-11-30 18:21:13;83;S
+20376;E:\MVSLibrary\Keylogger\x64\Debug\Keylogger.exe;2024-11-30 18:21:13;68;D
+20376;E:\MVSLibrary\Keylogger\x64\Debug\Keylogger.exe;2024-11-30 18:21:14;70;F
+20376;E:\MVSLibrary\Keylogger\x64\Debug\Keylogger.exe;2024-11-30 18:21:14;83;S
+20376;E:\MVSLibrary\Keylogger\x64\Debug\Keylogger.exe;2024-11-30 18:21:14;68;D
+20376;E:\MVSLibrary\Keylogger\x64\Debug\Keylogger.exe;2024-11-30 18:21:14;70;F
+20376;E:\MVSLibrary\Keylogger\x64\Debug\Keylogger.exe;2024-11-30 18:21:14;83;S
+20376;E:\MVSLibrary\Keylogger\x64\Debug\Keylogger.exe;2024-11-30 18:21:14;68;D
+20376;E:\MVSLibrary\Keylogger\x64\Debug\Keylogger.exe;2024-11-30 18:21:14;68;D
+20376;E:\MVSLibrary\Keylogger\x64\Debug\Keylogger.exe;2024-11-30 18:21:14;70;F
+20376;E:\MVSLibrary\Keylogger\x64\Debug\Keylogger.exe;2024-11-30 18:21:14;83;S
+20376;E:\MVSLibrary\Keylogger\x64\Debug\Keylogger.exe;2024-11-30 18:21:14;70;F
+20376;E:\MVSLibrary\Keylogger\x64\Debug\Keylogger.exe;2024-11-30 18:21:14;83;S
+20376;E:\MVSLibrary\Keylogger\x64\Debug\Keylogger.exe;2024-11-30 18:21:14;68;D
+20376;E:\MVSLibrary\Keylogger\x64\Debug\Keylogger.exe;2024-11-30 18:21:14;70;F
+20376;E:\MVSLibrary\Keylogger\x64\Debug\Keylogger.exe;2024-11-30 18:21:14;83;S
+20376;E:\MVSLibrary\Keylogger\x64\Debug\Keylogger.exe;2024-11-30 18:21:14;68;D
+20376;E:\MVSLibrary\Keylogger\x64\Debug\Keylogger.exe;2024-11-30 18:21:14;70;F
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:22:59;75;K
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:22:59;75;K
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:22:59;90;Z
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:22:59;90;Z
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:22:59;75;K
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:22:59;75;K
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:22:59;90;Z
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:22:59;90;Z
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:22:59;75;K
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:22:59;75;K
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:22:59;90;Z
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:22:59;75;K
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:22:59;90;Z
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:23:00;75;K
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:23:00;90;Z
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:23:00;75;K
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:23:00;90;Z
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:23:00;75;K
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:23:00;90;Z
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:23:00;75;K
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:23:00;90;Z
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:23:00;75;K
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:23:00;90;Z
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:23:00;75;K
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:23:00;90;Z
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:23:00;75;K
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:23:00;75;K
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:23:00;90;Z
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:23:00;75;K
+1004;C:\Users\klezo\AppData\Local\Programs\Opera GX\opera.exe;2024-11-30 18:23:00;90;Z
