@@ -11,6 +11,7 @@
 #include <shlobj.h>
 #include <ctime>
 #include <unordered_map>
+#include <shellapi.h>
 #include <psapi.h>
 
 
@@ -27,6 +28,7 @@ using namespace std;
 
 #define OnCreateFile	6
 #define OnRecordAction	7
+#define OnOpenFile  	8
 
 #define TextBufferSize	1000
 
@@ -54,16 +56,14 @@ HWND hEditControl;								// Поле ввода
 HWND hComboBox;									// Выпадающее меню
 char filename[MAX_PATH];						// Для хранения пути к выбранному файлу
 
-char globalFilePath[MAX_PATH] = { 0 };  // Глобальная переменная для хранения пути к файлу
-
-
 OPENFILENAMEA ofn;								// Структура для диалога открытия файла
 HINSTANCE hInst;                                // Текущий экземпляр
 WCHAR szTitle[MAX_LOADSTRING];                  // Текст строки заголовка
 WCHAR szWindowClass[MAX_LOADSTRING];            // Имя класса главного окна
 HWND hwndListView;                              // Переменная для ListView
 
-HWND hwndRecordButton;
+HWND hwndRecordButton;                          // Кнопка начала/останова записи нажатий клавиш
+HWND hwndFilePathLabel;                         // Указатель на виджет, отображающий путь файла
 
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
@@ -91,4 +91,8 @@ wstring GetKeyStringFromCode(int keyCode);
 LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
 void SetKeyboardHook();
 void RemoveKeyboardHook();
+
+std::wstring ANSIToWideString(const std::string& ansiStr);
+void OpenTextFile();
+void UpdateFilePathLabel();
 

