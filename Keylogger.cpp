@@ -1,6 +1,8 @@
 ﻿#include "framework.h"
 #include "Keylogger.h"
 #pragma comment(lib, "Comctl32.lib")
+#pragma comment(lib, "Shlwapi.lib")
+
 
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -129,10 +131,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case OnCreateFile:
             CreateFileInSelectedFolder(hWnd);
             break;
-        case OnReadFile:
-            LoadKeyloggerRecordsFromFile(hWnd);
-            KeyloggerFilling(hwndListView);
-            break;
         case OnOpenFile:
             OpenTextFile();
             break;
@@ -215,6 +213,7 @@ void DefineColumns(HWND hwndLV)
 }
 
 void KeyloggerFilling(HWND hwndListView) {
+
     // Удаляем все элементы перед добавлением новых
     ListView_DeleteAllItems(hwndListView);
 
@@ -248,12 +247,10 @@ void KeyloggerFilling(HWND hwndListView) {
     }
 }
 
-
 // Добавление пунктов меню
 void MainWndAddMenues(HWND hwnd) {
     HMENU RootMenu = CreateMenu();
     AppendMenu(RootMenu, MF_STRING, OnCreateFile, L"Создать файл");
-    AppendMenu(RootMenu, MF_STRING, OnReadFile, L"Выбрать файл");
     AppendMenu(RootMenu, MF_STRING, OnOpenFile, L"Открыть файл");
     AppendMenu(RootMenu, MF_STRING, OnClearedList, L"Очистить список");
     AppendMenu(RootMenu, MF_STRING, IDM_EXIT, L"Выход");
@@ -299,107 +296,43 @@ void UpdateFilePathLabel() {
     }
 }
 
-// Инициализация структуры OPENFILENAME
-void SetOpenFileParams(HWND hwnd) {
-    ZeroMemory(&ofn, sizeof(ofn));
-
-    ofn.lStructSize = sizeof(ofn);
-    ofn.hwndOwner = hwnd;
-    ofn.lpstrFile = filename;
-    ofn.lpstrFile[0] = '\0'; // Начальное значение пути
-    ofn.nMaxFile = sizeof(filename);
-    ofn.lpstrFilter = "Text Files\0*.TXT\0All Files\0*.*\0";
-    ofn.nFilterIndex = 1;
-    ofn.lpstrFileTitle = NULL;
-    ofn.nMaxFileTitle = 0;
-    ofn.lpstrInitialDir = NULL;
-    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-}
-
-// Функция парсинга содержимого файла в записи keylogger
-std::vector<KeyloggerRecord> ParseKeyloggerData(const std::string& fileContent) {
-    std::vector<KeyloggerRecord> keyloggerData;
-    std::stringstream stream(fileContent);
-    std::string line;
-
-    // Чтение каждой строки из файла
-    while (std::getline(stream, line)) {
-        if (line.empty()) continue;
-
-        std::stringstream ss(line); // Создаем поток для текущей строки
-        std::string part;
-
-        KeyloggerRecord record;
-
-        // Чтение и разбор строки по разделителю ";"
-        if (std::getline(ss, part, ';')) {
-            record.processId = std::stoul(part); // ID процесса
-        }
-        if (std::getline(ss, part, ';')) {
-            record.processPath = std::wstring(part.begin(), part.end()); // Путь к процессу
-        }
-        if (std::getline(ss, part, ';')) {
-            record.dateTime = std::wstring(part.begin(), part.end()); // Дата и время
-        }
-        if (std::getline(ss, part, ';')) {
-            record.keyCode = std::stoi(part); // Код клавиши
-        }
-        if (std::getline(ss, part, ';')) {
-            record.keyChar = std::wstring(part.begin(), part.end()); // Символ клавиши
-        }
-
-        // Добавляем разобранную запись в массив
-        keyloggerData.push_back(record);
+// Колбэк для установки начальной папки
+int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData) {
+    if (uMsg == BFFM_INITIALIZED) {
+        // Устанавливаем начальную папку
+        SendMessage(hwnd, BFFM_SETSELECTIONA, TRUE, lpData);
     }
-
-    return keyloggerData;
+    return 0;
 }
 
-// Функция для загрузки данных из файла в таблицу
-void LoadKeyloggerRecordsFromFile(HWND hwndListView) {
-    SetOpenFileParams(hwndListView);
-
-    // Открываем диалог выбора файла
-    if (GetOpenFileNameA(&ofn)) {
-
-        // Открываем файл для чтения
-        ifstream file(filename);
-        if (!file.is_open()) {
-            MessageBox(hwndListView, L"Ошибка при открытии файла!", L"Ошибка", MB_OK | MB_ICONERROR);
-            return;
-        }
-
-        // Считываем содержимое файла в строку
-        stringstream fileContent;
-        fileContent << file.rdbuf();
-        file.close();
-
-        UpdateFilePathLabel();
-
-        // Парсим содержимое файла
-        keyloggerRecords = ParseKeyloggerData(fileContent.str());
-    }
-}
-
-
-// Функция выбора папки
 BOOL SelectFolderDialog(HWND hwnd, char* folderPath) {
-    BROWSEINFO bi = { 0 };
-    bi.lpszTitle = L"Выберите папку для создания файла";
+    char exePath[MAX_PATH];
+    GetModuleFileNameA(NULL, exePath, MAX_PATH);  // Получаем путь к текущему exe
+    PathRemoveFileSpecA(exePath);  // Убираем имя exe-файла, оставляя только каталог
+
+    BROWSEINFOA bi = { 0 };
+    bi.hwndOwner = hwnd;
+    bi.lpszTitle = "Выберите папку для создания файла";
     bi.ulFlags = BIF_USENEWUI | BIF_RETURNONLYFSDIRS;
-    LPITEMIDLIST pidl = SHBrowseForFolder(&bi);
+    bi.lpfn = BrowseCallbackProc;  // Устанавливаем колбэк
+    bi.lParam = (LPARAM)exePath;   // Передаем путь к exe как начальную папку
+
+    LPITEMIDLIST pidl = SHBrowseForFolderA(&bi);
     if (pidl) {
         // Получаем путь выбранной папки
         SHGetPathFromIDListA(pidl, folderPath);
+        CoTaskMemFree(pidl);  // Освобождаем память
         return TRUE;
     }
     return FALSE;
 }
 
 void CreateFileInSelectedFolder(HWND hwnd) {
+
     char folderPath[MAX_PATH];
 
     if (SelectFolderDialog(hwnd, folderPath)) {
+
         // Получаем текущую дату и время
         time_t now = time(0);
         struct tm tstruct;
@@ -508,7 +441,7 @@ wstring GetKeyStringFromCode(int keyCode) {
     case VK_OEM_COMMA:  return L"COMMA";         // ,
     case VK_OEM_PERIOD: return L"DOT";           // .
 
-    default: return L"UNKNOWN";                         // Неизвестная клавиша
+    default: return L"UNKNOWN";                  // Неизвестная клавиша
     }
 }
 
@@ -627,7 +560,6 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
 
     return CallNextHookEx(keyboardHook, nCode, wParam, lParam);
 }
-
 
 // Установка хука
 void SetKeyboardHook() {

